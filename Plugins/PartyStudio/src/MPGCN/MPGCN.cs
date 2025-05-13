@@ -13,6 +13,7 @@ using MPLibrary;
 using PartyStudioPlugin.Properties;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
+using GCNRenderLibrary.Rendering;
 
 namespace PartyStudio.GCN
 {
@@ -51,11 +52,12 @@ namespace PartyStudio.GCN
             SpaceIcons.Add("Red", GLTexture2D.FromBitmap(Resources.Red));
             SpaceIcons.Add("Event", GLTexture2D.FromBitmap(Resources.Event));
             SpaceIcons.Add("Star", GLTexture2D.FromBitmap(Resources.Star));
+            SpaceIcons.Add("StarDisplay", GLTexture2D.FromBitmap(Resources.StarDisplay));
             SpaceIcons.Add("Bowser", GLTexture2D.FromBitmap(Resources.Bowser));
             SpaceIcons.Add("Spring", GLTexture2D.FromBitmap(Resources.Spring));
             SpaceIcons.Add("Item", GLTexture2D.FromBitmap(Resources.Item));
             SpaceIcons.Add("Mic", GLTexture2D.FromBitmap(Resources.Mic));
-            SpaceIcons.Add("Miracle", GLTexture2D.FromBitmap(Resources.Miracle_Space));
+            SpaceIcons.Add("Fortune", GLTexture2D.FromBitmap(Resources.Miracle_Space));
             SpaceIcons.Add("VS", GLTexture2D.FromBitmap(Resources.Duel));
             SpaceIcons.Add("Shop", GLTexture2D.FromBitmap(Resources.Shop));
             SpaceIcons.Add("Shop1", GLTexture2D.FromBitmap(Resources.Shop));
@@ -67,7 +69,9 @@ namespace PartyStudio.GCN
             SpaceIcons.Add("PlayerSpot", GLTexture2D.FromBitmap(Resources.PlayerStart));
             SpaceIcons.Add("Orb", GLTexture2D.FromBitmap(Resources.Orbs));
             SpaceIcons.Add("DK_Bowser", GLTexture2D.FromBitmap(Resources.DK));
-
+            SpaceIcons.Add("Battle", GLTexture2D.FromBitmap(Resources.Battle));
+            SpaceIcons.Add("Invisible", GLTexture2D.FromBitmap(Resources.Invisible));
+            SpaceIcons.Add("Key", GLTexture2D.FromBitmap(Resources.Key));
 
             foreach (var icon in SpaceIcons)
                 MapStudio.UI.IconManager.TryAddIcon(icon.Key.ToString(), icon.Value);
@@ -79,8 +83,30 @@ namespace PartyStudio.GCN
 
             MapArchive = new MPBIN(fileName);
 
-            string fileInfoPath = Path.Combine(Runtime.ExecutableDir, "Lib", "MP4", "W01.txt");
-            FileDefinition = new FileDefinition(fileInfoPath);
+            // Debug output: print all files in the archive
+            Console.WriteLine($"--- Inspecting archive: {fileName} ---");
+            int idx = 0;
+            foreach (var file in MapArchive.files)
+            {
+                string ext = Utils.GetExtension(file.FileName);
+                long size = file.FileData?.Length ?? 0;
+                Console.WriteLine($"[{idx}] {file.FileName} | Ext: {ext} | Size: {size} bytes");
+                idx++;
+            }
+            Console.WriteLine($"--- End of archive inspection ---");
+
+            // Hardcode file definitions instead of loading from W01.txt
+            FileDefinition = new FileDefinition();
+            FileDefinition.FileList.Add(0, new FileDefinition.File { Name = "Board Data", Display = true });
+            FileDefinition.FileList.Add(1, new FileDefinition.File { Name = "Board Model", Display = true });
+            FileDefinition.FileList.Add(2, new FileDefinition.File { Name = "Board Textures", Display = true });
+            FileDefinition.FileList.Add(3, new FileDefinition.File { Name = "Board Animations", Display = true });
+            FileDefinition.FileList.Add(4, new FileDefinition.File { Name = "Board Effects", Display = true });
+            FileDefinition.FileList.Add(5, new FileDefinition.File { Name = "Board Sounds", Display = true });
+            FileDefinition.FileList.Add(6, new FileDefinition.File { Name = "Board Events", Display = true });
+            FileDefinition.FileList.Add(7, new FileDefinition.File { Name = "Board UI", Display = true });
+            FileDefinition.FileList.Add(8, new FileDefinition.File { Name = "Board Scripts", Display = true });
+            FileDefinition.FileList.Add(9, new FileDefinition.File { Name = "Board Misc", Display = true });
 
             LoadModelAssets(mapEditor);
             LoadSpaces();
@@ -91,6 +117,29 @@ namespace PartyStudio.GCN
         private void LoadModelAssets(FileEditor mapEditor)
         {
             int fileID = 0;
+            Dictionary<int, AtbFile> textureFiles = new Dictionary<int, AtbFile>();
+
+            //First load all texture files
+            foreach (var file in MapArchive.files)
+            {
+                string ext = Utils.GetExtension(file.FileName);
+                if (ext == ".atb")
+                {
+                    try
+                    {
+                        var atb = new AtbFile(file.FileData);
+                        textureFiles[fileID] = atb;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to load ATB file {file.FileName}: {ex.Message}");
+                    }
+                }
+                fileID++;
+            }
+
+            //Then load model files and link textures
+            fileID = 0;
             foreach (var file in MapArchive.files)
             {
                 string ext = Utils.GetExtension(file.FileName);
@@ -101,20 +150,85 @@ namespace PartyStudio.GCN
                     {
                         var hsf = file.OpenFile() as HSF;
                         file.FileFormat = hsf;
+
+                        //Link textures from ATB files
+                        if (textureFiles.ContainsKey(fileID + 1)) //ATB files usually follow HSF files
+                        {
+                            var atb = textureFiles[fileID + 1];
+                            foreach (var tex in atb.Textures)
+                            {
+                                var textureInfo = new TextureInfo()
+                                {
+                                    Width = tex.Width,
+                                    Height = tex.Height,
+                                    Format = tex.Format,
+                                    Bpp = tex.Bpp,
+                                    PaletteEntries = (ushort)((tex.PaletteData?.Length ?? 0) / 2)
+                                };
+
+                                var hsfTexture = new HSFTexture()
+                                {
+                                    Name = $"Texture_{fileID}_{atb.Textures.IndexOf(tex)}",
+                                    TextureInfo = textureInfo,
+                                    ImageData = tex.ImageData,
+                                    GcnFormat = Decode_Gamecube.TextureFormats.C8,
+                                    GcnPaletteFormat = Decode_Gamecube.PaletteFormats.RGB5A3
+                                };
+
+                                //Convert palette data to ushort array
+                                if (tex.PaletteData != null && tex.PaletteData.Length > 0)
+                                {
+                                    ushort[] paletteData = new ushort[tex.PaletteData.Length / 2];
+                                    System.Buffer.BlockCopy(tex.PaletteData, 0, paletteData, 0, tex.PaletteData.Length);
+                                    hsfTexture.SetPalette(paletteData);
+                                }
+
+                                //Create the render texture
+                                hsfTexture.RenderTexture = new GLGXTexture(
+                                    hsfTexture.Name,
+                                    (uint)hsfTexture.TextureInfo.Width,
+                                    (uint)hsfTexture.TextureInfo.Height,
+                                    (uint)hsfTexture.GcnFormat,
+                                    (uint)hsfTexture.GcnPaletteFormat,
+                                    1,
+                                    hsfTexture.ImageData,
+                                    hsfTexture.PaletteData);
+
+                                hsf.Header.Textures.Add(hsfTexture);
+                            }
+                        }
+
                         if (hsf.Header.Meshes.Count > 0)
                         {
                             hsf.Root.Header = file.FileName;
-
                             hsf.Render.CanSelect = false;
-                            mapEditor.AddRender(hsf.Render);
-
+                            
+                            // Add board spaces to the model
+                            if (file.FileName.Contains("board"))
+                            {
+                                // Create a topdown view transform
+                                var topdownTransform = new TransformableObject(mapEditor.Root);
+                                topdownTransform.UINode.Header = "Topdown View";
+                                topdownTransform.Transform.Position = new Vector3(0, 100, 0);
+                                topdownTransform.Transform.Rotation = Quaternion.FromEulerAngles(-90 * (float)Math.PI / 180, 0, 0);
+                                topdownTransform.Transform.UpdateMatrix(true);
+                                
+                                // Add the model to the topdown view
+                                topdownTransform.UINode.AddChild(hsf.Root);
+                                mapEditor.AddRender(topdownTransform);
+                            }
+                            else
+                            {
+                                mapEditor.AddRender(hsf.Render);
+                                mapEditor.Root.AddChild(hsf.Root);
+                            }
+                            
                             ModelEditor.Add(hsf, FileDefinition, fileID);
-                            mapEditor.Root.AddChild(hsf.Root);
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-
+                        Console.WriteLine($"Failed to load HSF file {file.FileName}: {ex.Message}");
                     }
                 }
                 fileID++;
@@ -126,6 +240,7 @@ namespace PartyStudio.GCN
             //Space file is always the first non model file
             var spaceFile = MapArchive.files.FirstOrDefault(x => !x.FileName.Contains(".hsf") && !x.FileName.Contains(".atb"));
             BoardParams = new Board(spaceFile.FileData, Version);
+            
             //Load spaces
             foreach (var space in BoardParams.Spaces)
             {
@@ -142,6 +257,7 @@ namespace PartyStudio.GCN
                         break;
                 }
             }
+
             //Setup children
             for (int i = 0; i < Spaces.Count; i++)
             {
@@ -149,23 +265,15 @@ namespace PartyStudio.GCN
                     Spaces[i].Children.Add(Spaces[id]);
             }
 
+            // Add supported space types
             switch (Version)
             {
                 case GameVersion.MP4:
                     this.SpaceTypeList.AddRange(MP4.GetSupportedSpaces());
                     break;
-                case GameVersion.MP5:
-                 //   this.SpaceTypeList.AddRange(MP5.GetSupportedSpaces());
-                    break;
                 case GameVersion.MP6:
                     this.SpaceTypeList.AddRange(MP6.GetSupportedSpaces());
                     break;
-              /*  case GameVersion.MP7:
-                    this.SpaceTypeList.AddRange(MP7.GetSupportedSpaces());
-                    break;
-                case GameVersion.MP8:
-                    this.SpaceTypeList.AddRange(MP8.GetSupportedSpaces());
-                    break;*/
             }
         }
 
@@ -266,10 +374,12 @@ namespace PartyStudio.GCN
                 this.Scale = space.Scale;
             }
 
-
             public SpaceNode(BoardLoader loader) 
             {
-     
+                // Initialize with default values
+                this.Position = Vector3.Zero;
+                this.Rotation = Vector3.Zero;
+                this.Scale = Vector3.One;
             }
 
             public override void Render(GLContext context)

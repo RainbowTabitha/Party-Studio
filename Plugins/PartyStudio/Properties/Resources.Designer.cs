@@ -73,6 +73,16 @@ namespace PartyStudioPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] Battle {
+            get {
+                object obj = ResourceManager.GetObject("Battle", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] Blue {
             get {
                 object obj = ResourceManager.GetObject("Blue", resourceCulture);
@@ -126,6 +136,16 @@ namespace PartyStudioPlugin.Properties {
         internal static byte[] Event {
             get {
                 object obj = ResourceManager.GetObject("Event", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] Invisible {
+            get {
+                object obj = ResourceManager.GetObject("Invisible", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -269,7 +289,19 @@ namespace PartyStudioPlugin.Properties {
                 return ((byte[])(obj));
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] StarDisplay
+        {
+            get
+            {
+                object obj = ResourceManager.GetObject("StarDisplay", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>

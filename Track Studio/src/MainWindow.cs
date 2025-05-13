@@ -51,6 +51,8 @@ namespace PartyStudio
         {
             _arguments = arguments;
             Init();
+            // Subscribe to the board loader event
+            PartyStudioPlugin.BoardLoaderUI.OnLoadBoardRequested += LoadFileFormat;
         }
 
         public override void OnLoad()

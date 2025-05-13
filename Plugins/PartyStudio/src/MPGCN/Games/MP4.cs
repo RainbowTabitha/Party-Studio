@@ -254,9 +254,9 @@ namespace PartyStudio.GCN
             Red,
             Bowser,
             Item,
-            VS,
+            Battle,
             Event,
-            Miracle = 7,
+            Fortune = 7,
             Star,
             Spring,
         }
@@ -279,10 +279,10 @@ namespace PartyStudio.GCN
             Event2 = 0x30, //Special mini event
             Event3 = 0x40, //Special mini event
             PlayerSpot = 0x200, //Used in places to move player into area
-            ToadStar = 0x400, //Host placement with the star floor
+            StarDisplay = 0x400, //Host placement with the star floor
             Boo = 0x800, //Boo house. Limit of 1 per board
             Lottery = 0x1000, //Lottery. Limit of 1 per board
-            MiniMushroomPipe =  0x2000, //Mini mushroom required to pass
+            Key =  0x2000, //Mini mushroom required to pass
             Start = 0x8000, //Starting point. Must be present for board to work.
         }
     }

@@ -169,6 +169,12 @@
   <data name="PlayerStart" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\PlayerStart.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Invisible" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Invisible.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Battle" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Battle.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Red" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Red.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -180,6 +186,9 @@
   </data>
   <data name="Star" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Star.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="StarDisplay" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\StarDisplay.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Start" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Start.png;System.Byte[],mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

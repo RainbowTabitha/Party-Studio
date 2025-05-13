@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using MapStudio.UI;
 using Toolbox.Core;
+using Toolbox.Core.IO;
 using Toolbox.Core.ViewModels;
 using OpenTK;
 using GLFrameworkEngine;
@@ -44,9 +45,21 @@ namespace PartyStudio.GCN
         }
 
         public bool Identify(File_Info fileInfo, Stream stream) {
-            return false;
+            if (stream.Length < 16)
+                return false;
 
-            return fileInfo.Extension == ".bin";
+            if (Utils.GetExtension(fileInfo.FileName) == ".bin")
+            {
+                using (var reader = new FileReader(stream, true))
+                {
+                    reader.SetByteOrder(true);
+                    uint count = reader.ReadUInt32();
+                    uint offset = reader.ReadUInt32();
+                    if (offset == 4 + (4 * count) || offset == 8 + (4 * count))
+                        return true;
+                }
+            }
+            return false;
         }
 
         public void Load(Stream stream)
