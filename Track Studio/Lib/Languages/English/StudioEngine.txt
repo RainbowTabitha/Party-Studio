@@ -165,7 +165,8 @@ PROJECT_FOLDER - Project Folder
 
 OUTLINER - Outliner
 PROPERTIES - Properties
-VIEWPORT - Viewport
+VIEWPORT - 3D Viewer
+2D_VIEWPORT - 2D Viewer
 CONSOLE - Console
 ASSETS - Assets
 TIMELINE - Timeline

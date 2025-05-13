@@ -15,7 +15,7 @@ namespace PartyStudioPlugin
 {
     public class ViewportTopdown : DockWindow
     {
-        public override string Name => "Top Down";
+        public override string Name => "2D_VIEWPORT";
 
         public GLContext Context;
         Framebuffer Framebuffer;
