@@ -88,7 +88,8 @@ namespace PartyStudioPlugin
                 DrawEditMenuBar();
             };
 
-            //ReloadCollision();
+            // Set the viewport to 2D mode by default
+            Workspace.ViewportWindow.Pipeline.IsViewport2D = true;
 
             ProcessLoading.Instance.Update(100, 100, "Finished!");
 
