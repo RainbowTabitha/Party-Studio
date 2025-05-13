@@ -41,7 +41,7 @@ namespace PartyStudio.GCN
             }
         }
 
-        private MPBIN MapArchive;
+        public MPBIN MapArchive;
 
         public MPGCN()
         {
@@ -219,8 +219,8 @@ namespace PartyStudio.GCN
                             }
                             else
                             {
-                                mapEditor.AddRender(hsf.Render);
-                                mapEditor.Root.AddChild(hsf.Root);
+                            mapEditor.AddRender(hsf.Render);
+                            mapEditor.Root.AddChild(hsf.Root);
                             }
                             
                             ModelEditor.Add(hsf, FileDefinition, fileID);
@@ -239,6 +239,21 @@ namespace PartyStudio.GCN
         {
             //Space file is always the first non model file
             var spaceFile = MapArchive.files.FirstOrDefault(x => !x.FileName.Contains(".hsf") && !x.FileName.Contains(".atb"));
+            
+            if (spaceFile == null)
+            {
+                Console.WriteLine("Warning: No space file found in archive. Creating empty board.");
+                BoardParams = new Board();
+                return;
+            }
+
+            if (spaceFile.FileData == null)
+            {
+                Console.WriteLine("Warning: Space file has no data. Creating empty board.");
+                BoardParams = new Board();
+                return;
+            }
+
             BoardParams = new Board(spaceFile.FileData, Version);
             
             //Load spaces

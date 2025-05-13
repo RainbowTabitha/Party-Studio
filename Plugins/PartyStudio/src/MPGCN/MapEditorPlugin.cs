@@ -80,8 +80,19 @@ namespace PartyStudio.GCN
             BoardLoader.SaveFile(this, stream);
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
+            // Unsubscribe from board loading events
+            PartyStudioPlugin.BoardLoaderUI.OnLoadBoardRequested -= LoadFileFormat;
             this.PathRender?.Dispose();
+        }
+
+        private void LoadFileFormat(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                Workspace.LoadFileFormat(filePath);
+            }
         }
 
         public void LoadFile(BoardLoader boardLoader)
@@ -93,30 +104,46 @@ namespace PartyStudio.GCN
             AddRender(PathRender);
             Root.AddChild(PathRender.UINode);
 
-           // var window = new ToolWindow();
-           // window.Editor = this;
-            //this.ToolWindowDrawer = window;
-
-            SpaceWindow = new SpaceWindow(Workspace, boardLoader);
-            Workspace.ViewportWindow.DrawViewportMenuBar += delegate
+            // Check if this is a board file
+            bool isBoardFile = false;
+            if (boardLoader is MPGCN mpGCN)
             {
-                DrawEditMenuBar();
-            };
+                foreach (var file in mpGCN.MapArchive.files)
+                {
+                    if (file.FileName.Contains("board") || file.FileName.Contains("space"))
+                    {
+                        isBoardFile = true;
+                        break;
+                    }
+                }
+            }
 
-            ReloadCollision();
+            // Only initialize board-specific components if this is a board file
+            if (isBoardFile)
+            {
+                // Subscribe to board loading events
+                PartyStudioPlugin.BoardLoaderUI.OnLoadBoardRequested += LoadFileFormat;
+
+                // Initialize the 2D viewer
+                ViewportTopdown = new ViewportTopdown(this, Workspace);
+                ViewportTopdown.Opened = true;
+
+                SpaceWindow = new SpaceWindow(Workspace, boardLoader);
+                Workspace.ViewportWindow.DrawViewportMenuBar += delegate
+                {
+                    DrawEditMenuBar();
+                };
+
+                ReloadCollision();
+            }
 
             ProcessLoading.Instance.Update(100, 100, "Finished!");
-
-            /*   var camEditor = new CameraEditor();
-               camEditor.Anims = ((MPSA)boardLoader).OpeningCameras;
-               camEditor.Opened = true;
-               Workspace.ActiveWorkspace.Windows.Add(camEditor);*/
 
             Workspace.WorkspaceTools.Add(new MenuItemModel(
             $"   {'\uf279'}    Map Editor", () =>
             {
-              EditorMode = FileEditorMode.MapEditor;
-              ReloadEditorMode();
+                EditorMode = FileEditorMode.MapEditor;
+                ReloadEditorMode();
             }));
             Workspace.WorkspaceTools.Add(new MenuItemModel(
                $"   {'\uf6d1'}    Model Editor", () =>
@@ -196,16 +223,34 @@ namespace PartyStudio.GCN
         /// </summary>
         public override List<DockWindow> PrepareDocks()
         {
-            SpaceWindow.ParentDock = Workspace.ViewportWindow;
-
             List<DockWindow> windows = new List<DockWindow>();
             windows.Add(Workspace.Outliner);
             windows.Add(Workspace.PropertyWindow);
             windows.Add(Workspace.ConsoleWindow);
             windows.Add(Workspace.ToolWindow);
             windows.Add(Workspace.ViewportWindow);
-            windows.Add(SpaceWindow);
-            windows.Add(ViewportTopdown);
+
+            // Only add board-specific windows if this is a board file
+            bool isBoardFile = false;
+            if (BoardLoader is MPGCN mpGCN)
+            {
+                foreach (var file in mpGCN.MapArchive.files)
+                {
+                    if (file.FileName.Contains("board") || file.FileName.Contains("space"))
+                    {
+                        isBoardFile = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isBoardFile)
+            {
+                SpaceWindow.ParentDock = Workspace.ViewportWindow;
+                windows.Add(SpaceWindow);
+                windows.Add(ViewportTopdown);
+            }
+
             return windows;
         }
 
