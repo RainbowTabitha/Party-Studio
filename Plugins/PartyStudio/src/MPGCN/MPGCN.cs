@@ -96,17 +96,8 @@ namespace PartyStudio.GCN
             Console.WriteLine($"--- End of archive inspection ---");
 
             // Hardcode file definitions instead of loading from W01.txt
-            FileDefinition = new FileDefinition();
-            FileDefinition.FileList.Add(0, new FileDefinition.File { Name = "Board Data", Display = true });
-            FileDefinition.FileList.Add(1, new FileDefinition.File { Name = "Board Model", Display = true });
-            FileDefinition.FileList.Add(2, new FileDefinition.File { Name = "Board Textures", Display = true });
-            FileDefinition.FileList.Add(3, new FileDefinition.File { Name = "Board Animations", Display = true });
-            FileDefinition.FileList.Add(4, new FileDefinition.File { Name = "Board Effects", Display = true });
-            FileDefinition.FileList.Add(5, new FileDefinition.File { Name = "Board Sounds", Display = true });
-            FileDefinition.FileList.Add(6, new FileDefinition.File { Name = "Board Events", Display = true });
-            FileDefinition.FileList.Add(7, new FileDefinition.File { Name = "Board UI", Display = true });
-            FileDefinition.FileList.Add(8, new FileDefinition.File { Name = "Board Scripts", Display = true });
-            FileDefinition.FileList.Add(9, new FileDefinition.File { Name = "Board Misc", Display = true });
+            string fileInfoPath = Path.Combine(Runtime.ExecutableDir, "Lib", "MP4", "W01.txt");
+            FileDefinition = new FileDefinition(fileInfoPath);
 
             LoadModelAssets(mapEditor);
             LoadSpaces();
