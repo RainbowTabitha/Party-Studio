@@ -235,6 +235,7 @@ namespace PartyStudio.GCN
 
         public void ImportTexture(GCNImportedTexture tex)
         {
+            System.Diagnostics.Debug.WriteLine($"[TextureWrapper] ImportTexture called for: {tex.Name}, Size: {tex.Surfaces[0].EncodedData?.Length ?? 0} bytes");
             if (HSFTexture == null)
             {
                 HSFTexture = new HSFTexture();
@@ -260,21 +261,24 @@ namespace PartyStudio.GCN
                 TextureTint = HSFTexture.TextureInfo.TextureTint,
             };
 
+            Tag = new EditableTexture(HSFTexture);
+
+            // Mark as edited if possible
+            if (Tag is STGenericTexture editable)
+                editable.IsEdited = true;
 
             if (HSFTexture.RenderTexture != null)
             {
                 HSFTexture.RenderTexture.Reload(
-                tex.Name, (uint)tex.Width, (uint)tex.Height, (uint)HSFTexture.GcnFormat, (uint)tex.PaletteFormat, 1,
-                HSFTexture.ImageData, HSFTexture.PaletteData);
+                    tex.Name, (uint)tex.Width, (uint)tex.Height, (uint)HSFTexture.GcnFormat, (uint)tex.PaletteFormat, 1,
+                    HSFTexture.ImageData, HSFTexture.PaletteData);
             }
             else
             {
                 HSFTexture.RenderTexture = new GCNRenderLibrary.Rendering.GLGXTexture(
-                   tex.Name, (uint)tex.Width, (uint)tex.Height, (uint)HSFTexture.GcnFormat, (uint)tex.PaletteFormat, 1,
-                   HSFTexture.ImageData, HSFTexture.PaletteData);
+                    tex.Name, (uint)tex.Width, (uint)tex.Height, (uint)HSFTexture.GcnFormat, (uint)tex.PaletteFormat, 1,
+                    HSFTexture.ImageData, HSFTexture.PaletteData);
             }
-
-            Tag = new EditableTexture(HSFTexture);
 
             if (IconManager.HasIcon(this.Icon))
                 IconManager.RemoveTextureIcon(this.Icon);

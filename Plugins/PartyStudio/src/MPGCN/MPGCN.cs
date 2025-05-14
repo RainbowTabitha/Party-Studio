@@ -294,7 +294,76 @@ namespace PartyStudio.GCN
             var mem = new MemoryStream();
             BoardParams.Save(mem, Version);
 
+            // Update the space file
             MapArchive.files[0].FileData = new MemoryStream(mem.ToArray());
+            
+            // Check for modified textures in HSF files
+            for (int i = 0; i < MapArchive.files.Count; i++)
+            {
+                var file = MapArchive.files[i];
+                
+                // For HSF files, check if the file format exists
+                if (file.FileFormat is HSF hsf)
+                {
+                    // Since HSFTexture doesn't have an IsEdited property, we'll look at the editable texture wrappers
+                    bool hasModifiedTextures = false;
+                    
+                    // Check for texture changes by looking at the nodes in the scene tree
+                    foreach (var node in hsf.Root.Children)
+                    {
+                        if (node is TextureFolder folder)
+                        {
+                            // Check each texture in the folder
+                            foreach (var childNode in folder.Children)
+                            {
+                                if (childNode.Tag is STGenericTexture tex && tex.IsEdited)
+                                {
+                                    hasModifiedTextures = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If there are modified textures, update the file data
+                    if (hasModifiedTextures)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MPGCN] Saving modified textures in {file.FileName}");
+                        var hsfMem = new MemoryStream();
+                        hsf.Header.Save(hsfMem);
+                        file.FileData = new MemoryStream(hsfMem.ToArray());
+                    }
+                }
+                
+                // For ATB files that follow an HSF, make sure they're saved too
+                if (file.FileName.EndsWith(".atb") && file.FileFormat != null)
+                {
+                    if (file.FileFormat is ATB atbFile)
+                    {
+                        bool hasModifiedTextures = false;
+                        
+                        foreach (var child in atbFile.Root.Children)
+                        {
+                            if (child is ATB.TextureWrapper wrapper && 
+                                child.Tag is STGenericTexture tex && 
+                                tex.IsEdited)
+                            {
+                                hasModifiedTextures = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hasModifiedTextures)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MPGCN] Saving modified textures in {file.FileName}");
+                            var atbMem = new MemoryStream();
+                            atbFile.Save(atbMem);
+                            file.FileData = new MemoryStream(atbMem.ToArray());
+                        }
+                    }
+                }
+            }
+            
             MapArchive.Save(data);
         }
 

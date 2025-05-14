@@ -194,6 +194,10 @@ namespace MPLibrary.GCN
 
                 Tag = new EditableTexture(AtbTexture);
 
+                // Mark as edited if possible
+                if (Tag is STGenericTexture editable)
+                    editable.IsEdited = true;
+
                 if (IconManager.HasIcon(this.Icon))
                     IconManager.RemoveTextureIcon(this.Icon);
             }
