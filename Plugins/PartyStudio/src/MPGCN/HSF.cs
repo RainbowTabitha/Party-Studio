@@ -412,39 +412,77 @@ namespace PartyStudio.GCN
         private void Replace()
         {
             ImguiFileDialog dlg = new ImguiFileDialog();
-            dlg.AddFilter(".fbx", "Fbx");
             dlg.AddFilter(".dae", "Dae");
             dlg.AddFilter(".obj", "Obj");
             dlg.AddFilter(".gltf", "gltf");
             dlg.AddFilter(".glb", "glb");
+            dlg.AddFilter(".fbx", "Fbx");
 
             if (dlg.ShowDialog())
             {
-                var imported_hsf = HSFModelImporter.Import(dlg.FilePath, Header, new HSFModelImporter.ImportSettings()
+                string filePath = dlg.FilePath;
+                bool isFbx = Path.GetExtension(filePath).ToLower() == ".fbx";
+                
+                try
                 {
+                    // For FBX files, show a message that FBX is not directly supported
+                    if (isFbx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[HSF] FBX file selected: {filePath}");
+                        TryConvertAndImportFbx(filePath);
+                        return;
+                    }
+                    
+                    // For non-FBX files, try direct import
+                    var imported_hsf = HSFModelImporter.Import(filePath, Header, new HSFModelImporter.ImportSettings()
+                    {
+                        // Use standard import settings
+                    });
 
-                });
-
-                this.Header.ObjectNodes.Clear();
-                this.Header.ObjectNodes.AddRange(imported_hsf.ObjectNodes);
-
-                this.Header.Meshes.Clear();
-                this.Header.Meshes.AddRange(imported_hsf.Meshes);
-
-                this.Header.Materials.Clear();
-                this.Header.Materials.AddRange(imported_hsf.Materials);
-
-                this.Header.Textures.Clear();
-                this.Header.Textures.AddRange(imported_hsf.Textures);
-
-                this.Header.SkeletonData = imported_hsf.SkeletonData;
-                this.Header.MatrixData = imported_hsf.MatrixData;
-
-                this.Render.Reload(this.Header);
-
-                ReloadHSF();
-                CanSave = true;
+                    UpdateModelData(imported_hsf);
+                    TinyFileDialog.MessageBoxInfoOk("Model successfully imported!");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[HSF] Model import failed: {ex.Message}");
+                    
+                    // Show a detailed error message with steps
+                    TinyFileDialog.MessageBoxErrorOk(
+                        "Model import failed.\n\n" +
+                        $"Error: {ex.Message}\n\n" + 
+                        "Please try the following:\n" +
+                        "1. Export your model in OBJ or DAE format from your 3D modeling software\n" +
+                        "2. Simplify materials and textures in your model\n" +
+                        "3. Make sure the model uses a supported format (OBJ/DAE recommended)\n" +
+                        "4. Check for any errors in your model's geometry\n\n" +
+                        "Note: FBX files are not directly supported. Please convert to OBJ or DAE format first."
+                    );
+                }
             }
+        }
+
+        // Helper method to update the model data after importing
+        private void UpdateModelData(HsfFile imported_hsf)
+        {
+            this.Header.ObjectNodes.Clear();
+            this.Header.ObjectNodes.AddRange(imported_hsf.ObjectNodes);
+
+            this.Header.Meshes.Clear();
+            this.Header.Meshes.AddRange(imported_hsf.Meshes);
+
+            this.Header.Materials.Clear();
+            this.Header.Materials.AddRange(imported_hsf.Materials);
+
+            this.Header.Textures.Clear();
+            this.Header.Textures.AddRange(imported_hsf.Textures);
+
+            this.Header.SkeletonData = imported_hsf.SkeletonData;
+            this.Header.MatrixData = imported_hsf.MatrixData;
+
+            this.Render.Reload(this.Header);
+
+            ReloadHSF();
+            CanSave = true;
         }
 
         public class FogWrapper : NodeBase
@@ -1094,6 +1132,27 @@ namespace PartyStudio.GCN
             private byte AsByte(float value)
             {
                 return (byte)(Math.Clamp(value, 0.0f, 1.0f) * 255);
+            }
+        }
+
+        private void TryConvertAndImportFbx(string fbxFilePath)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[HSF] Attempting to convert FBX to OBJ: {fbxFilePath}");
+                
+                TinyFileDialog.MessageBoxErrorOk(
+                    "FBX import is not currently working due to Blender integration issues.\n\n" +
+                    "To import your model, please try the following:\n\n" +
+                    "1. Export your model directly as OBJ or DAE format from your 3D modeling software\n" +
+                    "2. Use a third-party converter like Blender to convert FBX to OBJ manually\n" +
+                    "3. Make sure to use simple materials and textures in your model\n\n" +
+                    "If you need to use FBX files, please check the application logs for more details.");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[HSF] FBX conversion error: {ex.Message}");
+                TinyFileDialog.MessageBoxErrorOk($"Error processing FBX file: {ex.Message}\n\nPlease try exporting your model as OBJ or DAE directly from your 3D modeling software.");
             }
         }
     }
